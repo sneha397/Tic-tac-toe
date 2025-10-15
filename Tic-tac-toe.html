@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tic Tac Toe — Cool Neon Edition</title>
+
+<style>
+  :root {
+    --bg: radial-gradient(circle at top left, #0f172a 0%, #020617 100%);
+    --glow1: #0ff;
+    --glow2: #00bfff;
+    --x-color: #38bdf8;
+    --o-color: #06b6d4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Poppins", sans-serif;
+    background: var(--bg);
+    color: #e0f7ff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+  }
+  .container, .start-screen {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 255, 255, 0.15);
+    box-shadow: 0 0 40px rgba(0, 255, 255, 0.15);
+    padding: 25px;
+    border-radius: 20px;
+    width: min(90vw, 400px);
+    backdrop-filter: blur(10px);
+    transition: all 0.5s ease;
+  }
+  h1 {
+    font-size: 2em;
+    color: #00eaff;
+    text-shadow: 0 0 15px var(--glow1);
+    margin-bottom: 10px;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 20px auto;
+  }
+  .cell {
+    width: 100px; height: 100px;
+    background: rgba(255,255,255,0.05);
+    border: 2px solid rgba(0,255,255,0.25);
+    border-radius: 14px;
+    font-size: 2.5rem; font-weight: 700;
+    display: flex; justify-content: center; align-items: center;
+    cursor: pointer;
+    color: #fff;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 10px transparent;
+  }
+  .cell:hover { box-shadow: 0 0 20px rgba(0,255,255,0.4); transform: scale(1.05); }
+  .cell.x { color: var(--x-color); text-shadow: 0 0 10px var(--x-color); }
+  .cell.o { color: var(--o-color); text-shadow: 0 0 10px var(--o-color); }
+  .cell.win { box-shadow: 0 0 25px 5px rgba(0,255,255,0.6); animation: pulse 1s infinite alternate; }
+  @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.07); } }
+  .status { margin-top: 10px; font-size: 1.1rem; color: #a5f3fc; }
+  .buttons { margin-top: 20px; display: flex; gap: 10px; justify-content: center; }
+  button {
+    background: linear-gradient(90deg, var(--glow1), var(--glow2));
+    border: none; border-radius: 10px;
+    color: #001; font-weight: 600; padding: 10px 16px;
+    cursor: pointer; transition: 0.2s;
+  }
+  button:hover { box-shadow: 0 0 20px var(--glow1); transform: translateY(-2px); }
+
+  /* ✨ Start Screen Styles */
+  .start-screen {
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    animation: fadeIn 1s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+  .start-btn {
+    margin-top: 20px;
+    background: linear-gradient(90deg, var(--glow1), var(--glow2));
+    color: #001; font-size: 1.1rem; font-weight: 600;
+    border: none; border-radius: 12px;
+    padding: 12px 22px; cursor: pointer;
+    box-shadow: 0 0 25px rgba(0,255,255,0.3);
+    transition: all 0.3s ease;
+  }
+  .start-btn:hover {
+    box-shadow: 0 0 35px var(--glow1);
+    transform: scale(1.05);
+  }
+  .credit {
+    margin-top: 15px;
+    font-size: 0.9rem;
+    color: #a5f3fc;
+    opacity: 0.8;
+  }
+  @media (max-width:450px) {
+    .cell { width: 80px; height: 80px; font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React + Babel CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    function StartScreen({ onStart }) {
+      return (
+        <div className="start-screen">
+          <h1>Tic Tac Toe</h1>
+          <p>Cool Neon Edition ✨</p>
+          <button className="start-btn" onClick={onStart}>Play Now</button>
+          <div className="credit">Made by Sneha 💙</div>
+        </div>
+      );
+    }
+
+    function Game() {
+      const [board, setBoard] = useState(Array(9).fill(null));
+      const [xIsNext, setXIsNext] = useState(true);
+      const [winnerInfo, setWinnerInfo] = useState(null);
+
+      const lines = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+
+      function handleClick(i) {
+        if (board[i] || winnerInfo) return;
+        const newBoard = [...board];
+        newBoard[i] = xIsNext ? "X" : "O";
+        setBoard(newBoard);
+        setXIsNext(!xIsNext);
+        checkWinner(newBoard);
+      }
+
+      function checkWinner(newBoard) {
+        for (const [a,b,c] of lines) {
+          if (newBoard[a] && newBoard[a] === newBoard[b] && newBoard[a] === newBoard[c]) {
+            setWinnerInfo({ winner: newBoard[a], line: [a,b,c] });
+            return;
+          }
+        }
+        if (!newBoard.includes(null)) {
+          setWinnerInfo({ winner: "Draw", line: [] });
+        }
+      }
+
+      function reset() {
+        setBoard(Array(9).fill(null));
+        setXIsNext(true);
+        setWinnerInfo(null);
+      }
+
+      const status = winnerInfo
+        ? winnerInfo.winner === "Draw"
+          ? "It's a Draw!"
+          : `Winner: ${winnerInfo.winner}`
+        : `Next Player: ${xIsNext ? "X" : "O"}`;
+
+      return (
+        <div className="container">
+          <h1>Tic Tac Toe</h1>
+          <div className="board">
+            {board.map((val, idx) => {
+              const isWin = winnerInfo?.line?.includes(idx);
+              return (
+                <div
+                  key={idx}
+                  className={`cell ${val ? val.toLowerCase() : ""} ${isWin ? "win" : ""}`}
+                  onClick={() => handleClick(idx)}
+                >
+                  {val}
+                </div>
+              );
+            })}
+          </div>
+          <div className="status">{status}</div>
+          <div className="buttons">
+            <button onClick={reset}>New Game</button>
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [started, setStarted] = useState(false);
+      return started ? <Game /> : <StartScreen onStart={() => setStarted(true)} />;
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
